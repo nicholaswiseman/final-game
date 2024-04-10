@@ -77,6 +77,7 @@ void Scene_StartMenu::sRender()
 
     m_pWindow->display();
 }
+
 void Scene_StartMenu::Initialize()
 {
     RegisterActions();

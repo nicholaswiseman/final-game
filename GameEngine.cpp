@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "Scene_StartMenu.h"
 #include "Scene_Play.h"
+#include "Scene_Game.h"
 
 #include <iostream>
 #include <map>
@@ -111,5 +112,5 @@ void GameEngine::UpdateView(sf::View newView)
 
 void GameEngine::Play()
 {
-    ChangeScene(eScene::Play, std::make_shared<Scene_Play>("assets/level1.txt", &m_window, this), false);
+    ChangeScene(eScene::Play, std::make_shared<Scene_Game>("assets/level1.txt", &m_window, this), false);
 }

@@ -22,6 +22,9 @@ private:
 		{eTexture::Link, "assets/link.png"},
 		{eTexture::Overworld, "assets/overworld.png"},
 		{eTexture::Monsters, "assets/monsters-overworld.png"},
+		{eTexture::Ship2D, "assets/space/Ship_2_D_Small.png"},
+		{eTexture::Bullet, "assets/space/bullet.png"},
+
 	};
 
 	typedef size_t numFrames;
@@ -71,6 +74,10 @@ private:
 			{sf::IntRect(179, 90, 16, 16)}}},
 		{eAsset::Meat, eTexture::Link, 1, 0, 0,
 			{sf::IntRect(299, 185, 8, 16)}},
+		{eAsset::PlayerShip, eTexture::Ship2D, 1, 0, 0,
+			{sf::IntRect(0, 0, 128, 128)}},
+		{eAsset::Bullet, eTexture::Bullet, 1, 0, 0,
+			{sf::IntRect(0, 0, 8, 32)}},
 	};
 
 	void LoadAnimation(std::tuple<aniName, Assets::texture, Assets::numFrames, Assets::frameDuration, Assets::aniLifetime, Assets::TextRectList> animationConfig);

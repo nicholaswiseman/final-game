@@ -19,6 +19,8 @@ enum class eAsset
 	Tektite,
 	SerifFont,
 	Meat,
+	PlayerShip,
+	Bullet,
 	AssetCount,
 };
 
@@ -28,5 +30,7 @@ enum class eTexture
 	Link,
 	Overworld,
 	Monsters,
+	Ship2D,
+	Bullet,
 	TextureCount,
 };
