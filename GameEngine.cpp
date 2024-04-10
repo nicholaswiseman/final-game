@@ -108,3 +108,8 @@ void GameEngine::UpdateView(sf::View newView)
 {
     m_window.setView(newView);
 }
+
+void GameEngine::Play()
+{
+    ChangeScene(eScene::Play, std::make_shared<Scene_Play>("assets/level1.txt", &m_window, this), false);
+}

@@ -22,7 +22,6 @@ class GameEngine
 	void Initialize(const std::string& assetPath);
 	void UpdateScene();
 	void Quit();
-	void ChangeScene(eScene sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene);
 	void sUserInput();
 
 public:
@@ -33,5 +32,7 @@ public:
 	const sf::RenderWindow& GetWindow() const;
 	std::shared_ptr<Scene> getCurrentScene();
 	void UpdateView(sf::View newView);
+	void Play();
+	void ChangeScene(eScene sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene);
 };
 

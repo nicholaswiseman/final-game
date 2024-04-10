@@ -45,6 +45,10 @@ void Scene_StartMenu::OptionSelection()
     {
         m_pWindow->close(); // Close the window if "Exit" is selected
     }
+    else if (m_menuOptions[m_selectedOptionIndex].getString() == "New Game")
+    {
+        m_pGame->Play();
+    }
 }
 
 void Scene_StartMenu::sRender()
