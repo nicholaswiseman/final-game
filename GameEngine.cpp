@@ -1,5 +1,6 @@
 #include "GameEngine.h"
 #include "Scene.h"
+#include "Scene_StartMenu.h"
 #include "Scene_Play.h"
 
 #include <iostream>
@@ -21,7 +22,8 @@ void GameEngine::Initialize(const std::string& assetPath)
     m_window.setKeyRepeatEnabled(false);
     sf::View view2(sf::FloatRect(0,0,WINDOW_WIDTH, WINDOW_HEIGHT));
     m_window.setView(view2);
-    ChangeScene(eScene::Play, std::make_shared<Scene_Play>("assets/level1.txt", &m_window, this), false);
+    ChangeScene(eScene::Menu, std::make_shared<Scene_StartMenu>(&m_window, this), false);
+    //ChangeScene(eScene::Play, std::make_shared<Scene_Play>("assets/level1.txt", &m_window, this), false);
 }
 
 void GameEngine::Run()

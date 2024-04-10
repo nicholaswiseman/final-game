@@ -13,6 +13,10 @@ enum class eAction
 	MoveUp,
 	MoveDown,
 	Attack,
+	//menu actions
+	CursorUp,
+	CursorDown,
+	SelectOption,
 	ActionCount
 };
 
