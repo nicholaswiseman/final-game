@@ -22,7 +22,7 @@ public:
 	Vec2 pos;
 	Vec2 prevPos;
 	Vec2 velocity;
-	Vec2 scale;
+	Vec2 scale = Vec2(1,1);
 	float angle;
 };
 

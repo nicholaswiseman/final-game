@@ -30,6 +30,10 @@ public:
 
     void sBackgroundScroll();
 
+    void sEnemyBehavior();
+
+    void PatrolBehavior(EntityPointer e);
+
     void Initialize(const std::string& levelPath);
 
     void CreateBackground();
@@ -37,6 +41,8 @@ public:
     void RegisterSceneActions();
 
     void SpawnPlayer();
+
+    void SpawnEnemy();
 
 private:
     std::string m_levelPath;

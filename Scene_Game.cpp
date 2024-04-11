@@ -12,6 +12,7 @@ void Scene_Game::Initialize(const std::string& levelPath)
 	CreateBackground();
 	RegisterSceneActions();
 	SpawnPlayer();
+	SpawnEnemy();
 	//LoadLevel(levelPath);
 }
 
@@ -34,6 +35,7 @@ void Scene_Game::CreateBackground()
 	earth->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Earth));
 	earth->AddComponent<CTransform>();
 	earth->GetComponent<CTransform>().pos = Vec2(700, 100);
+	earth->GetComponent<CTransform>().scale = Vec2(10, 10);
 	earth->AddComponent<CParallax>(0.5);
 }
 
@@ -56,6 +58,7 @@ void Scene_Game::Update()
 {
 	m_entityMgr.Update();
 	sCamera();
+	sEnemyBehavior();
 	sMovement();
 	sBackgroundScroll();
 	sParallax();
@@ -95,6 +98,48 @@ void Scene_Game::SpawnPlayer()
 	player->AddComponent<CHealth>(5);
 }
 
+void Scene_Game::SpawnEnemy()
+{
+	auto pEnemy = m_entityMgr.addEntity(eEntityTag::Enemy);
+
+	pEnemy->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Ufo));
+
+	pEnemy->AddComponent<CTransform>();
+	//pEnemy->GetComponent<CTransform>().scale = Vec2(4, 4);
+	pEnemy->GetComponent<CTransform>().pos = Vec2(100, -500);//GridToMidPixel(0, 0, 8, 5, pEnemy);
+
+	sf::RectangleShape boundBox = sf::RectangleShape(pEnemy->GetComponent<CAnimation>().animation.GetSize().ToSFMLVec2());
+	boundBox.setSize(sf::Vector2f(boundBox.getSize().x, boundBox.getSize().y));
+	boundBox.setOrigin(boundBox.getSize().x / 2, boundBox.getSize().y / 2);
+	boundBox.setFillColor(sf::Color::Red);
+	pEnemy->AddComponent<CBoundingBox>(boundBox);
+
+	pEnemy->AddComponent<CCollision>();
+
+	pEnemy->AddComponent<CHealth>(5);
+	std::vector<Vec2> posList = { Vec2(700,-500), Vec2(100, -500) };
+	pEnemy->AddComponent<CBehavior>(eBehavior::Patrol, posList);
+
+	//asteroid
+	auto pAsteroid = m_entityMgr.addEntity(eEntityTag::Enemy);
+
+	pAsteroid->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Asteroid));
+
+	pAsteroid->AddComponent<CTransform>();
+	//pAsteroid->GetComponent<CTransform>().scale = Vec2(4, 4);
+	pAsteroid->GetComponent<CTransform>().pos = Vec2(500, -500);//GridToMidPixel(0, 0, 8, 5, pAsteroid);
+
+	sf::RectangleShape astBoundBox = sf::RectangleShape(pAsteroid->GetComponent<CAnimation>().animation.GetSize().ToSFMLVec2());
+	astBoundBox.setSize(sf::Vector2f(astBoundBox.getSize().x, astBoundBox.getSize().y));
+	astBoundBox.setOrigin(boundBox.getSize().x / 2, astBoundBox.getSize().y / 2);
+	astBoundBox.setFillColor(sf::Color::Red);
+	pAsteroid->AddComponent<CBoundingBox>(astBoundBox);
+
+	pAsteroid->AddComponent<CCollision>();
+
+	pAsteroid->AddComponent<CHealth>(5);
+}
+
 void Scene_Game::sRender()
 {
 	m_pWindow->clear(sf::Color::Black);
@@ -120,7 +165,7 @@ void Scene_Game::sRender()
 			CTransform transform = e->GetComponent<CTransform>();
 			e->GetComponent<CAnimation>().animation.GetSprite().setPosition(transform.pos.x, transform.pos.y);
 			e->GetComponent<CAnimation>().animation.GetSprite().setRotation(transform.angle);
-			//e->GetComponent<CAnimation>().animation.GetSprite().setScale(transform.scale.x, transform.scale.y);
+			e->GetComponent<CAnimation>().animation.GetSprite().setScale(transform.scale.x, transform.scale.y);
 			if (e->GetComponent<CInvincibility>().has && e->GetComponent<CInvincibility>().duration > 0)
 			{
 				e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 100));
@@ -432,4 +477,46 @@ void Scene_Game::sBackgroundScroll()
 			bg->GetComponent<CTransform>().pos.y -= 2.0f * bgHeight;
 		}
 	}
+}
+
+void Scene_Game::sEnemyBehavior()
+{
+	EntityList enemies = *(m_entityMgr.getEntities(eEntityTag::Enemy));
+	for (EntityPointer enemy : enemies)
+	{
+		CBehavior cBehavior = enemy->GetComponent<CBehavior>();
+		if (cBehavior.has)
+		{
+			switch (cBehavior.behavior)
+			{
+			case eBehavior::Patrol:
+				PatrolBehavior(enemy);
+				break;
+			case eBehavior::Chase:
+				//ChaseBehavior(enemy);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+void Scene_Game::PatrolBehavior(EntityPointer e)
+{
+	CBehavior cBehavior = e->GetComponent<CBehavior>();
+	//Vec2 target = GridToMidPixel(0, 0, cBehavior.positions[cBehavior.posIdx].x, cBehavior.positions[cBehavior.posIdx].y, e);
+	Vec2 target = Vec2(cBehavior.positions[cBehavior.posIdx].x, cBehavior.positions[cBehavior.posIdx].y);
+	Vec2 posDelta = e->GetComponent<CTransform>().pos - target;
+	float speed = e->GetComponent<CTransform>().velocity.Absolute();
+
+	if (posDelta <= speed && posDelta >= -speed)
+	{
+		int posCount = cBehavior.positions.size();
+		e->GetComponent<CBehavior>().posIdx = (cBehavior.posIdx + 1) % posCount;
+		target = Vec2(cBehavior.positions[cBehavior.posIdx].x, cBehavior.positions[cBehavior.posIdx].y);
+	}
+	Vec2 newSpeed = target - e->GetComponent<CTransform>().pos;
+	newSpeed.Normalize(ENEMY_CHASE_SPEED);
+	e->GetComponent<CTransform>().velocity = newSpeed;
 }

@@ -23,6 +23,8 @@ enum class eAsset
 	Bullet,
 	SpaceBg,
 	Earth,
+	Ufo,
+	Asteroid,
 	AssetCount,
 };
 
@@ -36,5 +38,7 @@ enum class eTexture
 	Bullet,
 	SpaceBg,
 	Earth,
+	Ufo,
+	Asteroid,
 	TextureCount,
 };

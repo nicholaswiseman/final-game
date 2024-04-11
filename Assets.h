@@ -25,8 +25,9 @@ private:
 		{eTexture::Ship2D, "assets/space/Ship_2_D_Small.png"},
 		{eTexture::Bullet, "assets/space/bullet.png"},
 		{eTexture::SpaceBg, "assets/space/space-bg.png"},
-		{eTexture::Earth, "assets/space/earf.png"}
-
+		{eTexture::Earth, "assets/space/earf.png"},
+		{eTexture::Ufo, "assets/space/ufo.png"},
+		{eTexture::Asteroid, "assets/space/asteroid.png"}
 	};
 
 	typedef size_t numFrames;
@@ -83,6 +84,10 @@ private:
 		{eAsset::SpaceBg, eTexture::SpaceBg, 1, 0, 0,
 			{sf::IntRect(0, 0, 768, 896)}},
 		{eAsset::Earth, eTexture::Earth, 1, 0, 0,
+			{sf::IntRect(0, 0, 64, 64)}},
+		{eAsset::Ufo, eTexture::Ufo, 1, 0, 0,
+			{sf::IntRect(0, 0, 64, 32)}},
+		{eAsset::Asteroid, eTexture::Asteroid, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 64)}},
 	};
 
