@@ -21,6 +21,8 @@ enum class eAsset
 	Meat,
 	PlayerShip,
 	Bullet,
+	SpaceBg,
+	Earth,
 	AssetCount,
 };
 
@@ -32,5 +34,7 @@ enum class eTexture
 	Monsters,
 	Ship2D,
 	Bullet,
+	SpaceBg,
+	Earth,
 	TextureCount,
 };

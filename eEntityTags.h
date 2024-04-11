@@ -6,5 +6,6 @@ enum class eEntityTag
 	Tile,
 	Attack,
 	Decoration,
+	Background,
 	Item,
 };

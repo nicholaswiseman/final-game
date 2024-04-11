@@ -144,3 +144,19 @@ public:
 	}
 	int duration;
 };
+
+class CParallax : public Component
+{
+public:
+	CParallax()
+	{
+		has = true;
+		factor = 1;
+	}
+	CParallax(float fact)
+	{
+		factor = fact;
+		has = true;
+	}
+	float factor;
+};

@@ -24,6 +24,8 @@ private:
 		{eTexture::Monsters, "assets/monsters-overworld.png"},
 		{eTexture::Ship2D, "assets/space/Ship_2_D_Small.png"},
 		{eTexture::Bullet, "assets/space/bullet.png"},
+		{eTexture::SpaceBg, "assets/space/space-bg.png"},
+		{eTexture::Earth, "assets/space/earf.png"}
 
 	};
 
@@ -78,6 +80,10 @@ private:
 			{sf::IntRect(0, 0, 128, 128)}},
 		{eAsset::Bullet, eTexture::Bullet, 1, 0, 0,
 			{sf::IntRect(0, 0, 8, 32)}},
+		{eAsset::SpaceBg, eTexture::SpaceBg, 1, 0, 0,
+			{sf::IntRect(0, 0, 768, 896)}},
+		{eAsset::Earth, eTexture::Earth, 1, 0, 0,
+			{sf::IntRect(0, 0, 64, 64)}},
 	};
 
 	void LoadAnimation(std::tuple<aniName, Assets::texture, Assets::numFrames, Assets::frameDuration, Assets::aniLifetime, Assets::TextRectList> animationConfig);

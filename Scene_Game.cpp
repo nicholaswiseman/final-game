@@ -9,9 +9,32 @@ Scene_Game::Scene_Game(const std::string& levelPath, sf::RenderWindow* pWindow, 
 
 void Scene_Game::Initialize(const std::string& levelPath)
 {
+	CreateBackground();
 	RegisterSceneActions();
 	SpawnPlayer();
 	//LoadLevel(levelPath);
+}
+
+void Scene_Game::CreateBackground()
+{
+	EntityPointer pBg0 = m_entityMgr.addEntity(eEntityTag::Background);
+	EntityPointer pBg1 = m_entityMgr.addEntity(eEntityTag::Background);
+
+	pBg0->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::SpaceBg));
+	pBg1->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::SpaceBg));
+
+	pBg0->AddComponent<CTransform>();
+	pBg1->AddComponent<CTransform>();
+
+	Vec2 viewCenter = Vec2(m_pWindow->getView().getCenter().x, m_pWindow->getView().getCenter().y);
+	pBg0->GetComponent<CTransform>().pos = viewCenter;
+	pBg1->GetComponent<CTransform>().pos = Vec2(viewCenter.x, viewCenter.y - pBg1->GetComponent<CAnimation>().animation.GetSize().y);
+
+	EntityPointer earth = m_entityMgr.addEntity(eEntityTag::Decoration);
+	earth->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Earth));
+	earth->AddComponent<CTransform>();
+	earth->GetComponent<CTransform>().pos = Vec2(700, 100);
+	earth->AddComponent<CParallax>(0.5);
 }
 
 void Scene_Game::RegisterSceneActions()
@@ -32,8 +55,20 @@ void Scene_Game::RegisterSceneActions()
 void Scene_Game::Update()
 {
 	m_entityMgr.Update();
+	sCamera();
 	sMovement();
+	sBackgroundScroll();
+	sParallax();
 	sRender();
+}
+
+void Scene_Game::sCamera()
+{
+	sf::Vector2f cameraSize = sf::Vector2f(WINDOW_WIDTH, WINDOW_HEIGHT);
+	sf::View oldView = m_pWindow->getView();
+	sf::Vector2f newOrigin = sf::Vector2f(oldView.getCenter().x, oldView.getCenter().y - SCREEN_SCROLL_SPEED);
+	sf::View view(newOrigin, cameraSize);
+	m_pGame->UpdateView(view);
 }
 
 void Scene_Game::SpawnPlayer()
@@ -63,9 +98,14 @@ void Scene_Game::SpawnPlayer()
 void Scene_Game::sRender()
 {
 	m_pWindow->clear(sf::Color::Black);
+
+	RenderBackground();
+
 	EntityList allEntities = *(m_entityMgr.getEntities());
 	for (EntityPointer e : allEntities)
 	{
+		if (e->getTag() == eEntityTag::Background) { continue; }
+
 		if (m_drawTextures && e->HasComponent<CAnimation>())
 		{
 			e->GetComponent<CAnimation>().animation.Update();
@@ -112,6 +152,27 @@ void Scene_Game::sRender()
 	//}
 
 	m_pWindow->display();
+}
+
+void Scene_Game::RenderBackground()
+{
+	EntityList backgrounds = *(m_entityMgr.getEntities(eEntityTag::Background));
+	for (EntityPointer e : backgrounds)
+	{
+		if (e->HasComponent<CAnimation>())
+		{
+			e->GetComponent<CAnimation>().animation.Update();
+			if (e->GetComponent<CAnimation>().animation.IsEnded())
+			{
+				e->markInactive();
+			}
+			CTransform transform = e->GetComponent<CTransform>();
+			e->GetComponent<CAnimation>().animation.GetSprite().setPosition(transform.pos.x, transform.pos.y);
+			e->GetComponent<CAnimation>().animation.GetSprite().setRotation(transform.angle);
+
+			m_pWindow->draw(e->GetComponent<CAnimation>().animation.GetSprite());
+		}
+	}
 }
 
 void Scene_Game::sDoAction()
@@ -188,46 +249,7 @@ void Scene_Game::DoAction(Action action)
 
 void Scene_Game::sMovement()
 {
-	EntityPointer player = m_entityMgr.getPlayer();
-	if (player)
-	{
-		if (player->GetComponent<CInput>().has && player->GetComponent<CTransform>().has)
-		{
-			Vec2 oldVelocity = player->GetComponent<CTransform>().velocity;
-			float oldAngle = player->GetComponent<CTransform>().angle;
-			player->GetComponent<CTransform>().velocity = Vec2(0, 0);
-			if (player->GetComponent<CInput>().left)
-			{
-				player->GetComponent<CTransform>().velocity.x -= PLAYER_WALK_SPEED;
-				player->GetComponent<CTransform>().angle = -90;
-			}
-			if (player->GetComponent<CInput>().right)
-			{
-				player->GetComponent<CTransform>().velocity.x += PLAYER_WALK_SPEED;
-				player->GetComponent<CTransform>().angle = 90;
-			}
-			if (player->GetComponent<CInput>().up)
-			{
-				player->GetComponent<CTransform>().velocity.y -= PLAYER_WALK_SPEED;
-				player->GetComponent<CTransform>().angle = 0;
-			}
-			if (player->GetComponent<CInput>().down)
-			{
-				player->GetComponent<CTransform>().velocity.y += PLAYER_WALK_SPEED;
-				player->GetComponent<CTransform>().angle = 180;
-			}
-
-			if ((player->GetComponent<CTransform>().velocity.x != 0 && player->GetComponent<CTransform>().velocity.y != 0)) //dont let player move in x and y direction at once
-			{
-				player->GetComponent<CTransform>().velocity = oldVelocity;
-				player->GetComponent<CTransform>().angle = oldAngle;
-			}
-
-			player->GetComponent<CTransform>().prevPos = player->GetComponent<CTransform>().pos;
-			player->GetComponent<CTransform>().pos.x += player->GetComponent<CTransform>().velocity.x;
-			player->GetComponent<CTransform>().pos.y += player->GetComponent<CTransform>().velocity.y;
-		}
-	}
+	UpdatePlayerMovement();
 
 	EntityList enemies = *(m_entityMgr.getEntities(eEntityTag::Enemy));
 	for (EntityPointer enemy : enemies)
@@ -242,6 +264,95 @@ void Scene_Game::sMovement()
 		attack->GetComponent<CTransform>().prevPos = attack->GetComponent<CTransform>().pos;
 		attack->GetComponent<CTransform>().pos.x += attack->GetComponent<CTransform>().velocity.x;
 		attack->GetComponent<CTransform>().pos.y += attack->GetComponent<CTransform>().velocity.y;
+	}
+}
+
+void Scene_Game::sParallax()
+{
+	EntityList decs = *(m_entityMgr.getEntities(eEntityTag::Decoration));
+	for (EntityPointer e : decs)
+	{
+		if (e->HasComponent<CParallax>())
+		{
+			float parallaxMultiplier = e->GetComponent<CParallax>().factor;
+			e->GetComponent<CTransform>().pos.y -= SCREEN_SCROLL_SPEED * parallaxMultiplier;
+		}
+	}
+}
+void Scene_Game::UpdatePlayerMovement()
+{
+	EntityPointer player = m_entityMgr.getPlayer();
+	if (player)
+	{
+		if (player->GetComponent<CInput>().has && player->GetComponent<CTransform>().has)
+		{
+			Vec2 oldVelocity = player->GetComponent<CTransform>().velocity;
+			float oldAngle = player->GetComponent<CTransform>().angle;
+			player->GetComponent<CTransform>().velocity = Vec2(0, 0);
+			if (player->GetComponent<CInput>().left)
+			{
+				player->GetComponent<CTransform>().velocity.x -= PLAYER_WALK_SPEED;
+				//player->GetComponent<CTransform>().angle = -90;
+			}
+			if (player->GetComponent<CInput>().right)
+			{
+				player->GetComponent<CTransform>().velocity.x += PLAYER_WALK_SPEED;
+				//player->GetComponent<CTransform>().angle = 90;
+			}
+			if (player->GetComponent<CInput>().up)
+			{
+				player->GetComponent<CTransform>().velocity.y -= PLAYER_WALK_SPEED;
+				//player->GetComponent<CTransform>().angle = 0;
+			}
+			if (player->GetComponent<CInput>().down)
+			{
+				player->GetComponent<CTransform>().velocity.y += PLAYER_WALK_SPEED;
+				//player->GetComponent<CTransform>().angle = 180;
+			}
+
+			if ((player->GetComponent<CTransform>().velocity.x != 0 && player->GetComponent<CTransform>().velocity.y != 0)) //dont let player move in x and y direction at once
+			{
+				player->GetComponent<CTransform>().velocity = oldVelocity;
+				player->GetComponent<CTransform>().angle = oldAngle;
+			}
+
+			player->GetComponent<CTransform>().prevPos = player->GetComponent<CTransform>().pos;
+			player->GetComponent<CTransform>().pos.x += player->GetComponent<CTransform>().velocity.x;
+			player->GetComponent<CTransform>().pos.y += player->GetComponent<CTransform>().velocity.y;
+			KeepEntityInWindow(player);
+		}
+	}
+}
+
+void Scene_Game::KeepEntityInWindow(EntityPointer e)
+{
+	Vec2 currentPos = e->GetComponent<CTransform>().pos;
+	Vec2 entitySize = e->GetComponent<CAnimation>().animation.GetSize();
+	float entityHalfWidth = entitySize.x / 2.0f;
+	float entityHalfHeight = entitySize.y / 2.0f;
+	sf::View view = m_pWindow->getView();
+	sf::Vector2f viewCenter = view.getCenter();
+	sf::Vector2f viewSize = view.getSize();
+	float leftBoundary = viewCenter.x - viewSize.x / 2.0f + entityHalfWidth;
+	float rightBoundary = viewCenter.x + viewSize.x / 2.0f - entityHalfWidth;
+	float topBoundary = viewCenter.y - viewSize.y / 2.0f + entityHalfHeight;
+	float bottomBoundary = viewCenter.y + viewSize.y / 2.0f - entityHalfHeight;
+
+	if (currentPos.x > rightBoundary)
+	{
+		e->GetComponent<CTransform>().pos.x = rightBoundary;
+	}
+	if (currentPos.x < leftBoundary)
+	{
+		e->GetComponent<CTransform>().pos.x = leftBoundary;
+	}
+	if (currentPos.y > bottomBoundary)
+	{
+		e->GetComponent<CTransform>().pos.y = bottomBoundary;
+	}
+	if (currentPos.y < topBoundary)
+	{
+		e->GetComponent<CTransform>().pos.y = topBoundary;
 	}
 }
 
@@ -301,4 +412,24 @@ Vec2 Scene_Game::CalculateBulletSpeed()
 float Scene_Game::ConvertTransformRotationToRads(float rotation)
 {
 	return (-1 * rotation + 90) * acos(-1) / 180; //acos(-1)=pi
+}
+
+void Scene_Game::sBackgroundScroll()
+{
+	EntityList bgs = *(m_entityMgr.getEntities(eEntityTag::Background));
+	for (EntityPointer bg : bgs)
+	{
+		float bgHeight = bg->GetComponent<CAnimation>().animation.GetSize().y;
+		float bgCenter = bg->GetComponent<CTransform>().pos.y;
+		float topOfBg = bgCenter - bgHeight / 2.0f;
+		float cameraHeight = m_pWindow->getView().getSize().y;
+		float cameraCenter = m_pWindow->getView().getCenter().y;
+		float bottomOfView = cameraCenter + cameraHeight / 2.0f;
+
+		bool isOffScreen = topOfBg > bottomOfView;
+		if (isOffScreen)
+		{
+			bg->GetComponent<CTransform>().pos.y -= 2.0f * bgHeight;
+		}
+	}
 }

@@ -6,11 +6,19 @@ public:
     Scene_Game(const std::string& levelPath, sf::RenderWindow* pWindow, GameEngine* pGame);
 
     void Update() override;
+    void sCamera();
     void sDoAction() override;
     void sRender() override;
+    void RenderBackground();
     void DoAction(Action action) override;
 
     void sMovement();
+
+    void sParallax();
+
+    void UpdatePlayerMovement();
+
+    void KeepEntityInWindow(EntityPointer e);
 
     void SpawnBullet();
 
@@ -20,7 +28,11 @@ public:
 
     float ConvertTransformRotationToRads(float rotation);
 
+    void sBackgroundScroll();
+
     void Initialize(const std::string& levelPath);
+
+    void CreateBackground();
 
     void RegisterSceneActions();
 
