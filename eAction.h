@@ -17,6 +17,7 @@ enum class eAction
 	CursorUp,
 	CursorDown,
 	SelectOption,
+	Special,
 	ActionCount
 };
 

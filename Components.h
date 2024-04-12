@@ -160,3 +160,18 @@ public:
 	}
 	float factor;
 };
+
+class CLifetime : public Component
+{
+public:
+	CLifetime()
+	{
+
+	}
+	CLifetime(int life)
+	{
+		lifetimeFrames = life;
+		has = true;
+	}
+	int lifetimeFrames;
+};

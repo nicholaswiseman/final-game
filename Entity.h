@@ -17,7 +17,8 @@ typedef std::tuple<
 	CBehavior,
 	CBlockVision,
 	CInvincibility,
-	CParallax
+	CParallax,
+	CLifetime
 > ComponentTuple;
 
 class Entity

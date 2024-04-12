@@ -435,19 +435,19 @@ void Scene_Play::sMovement()
 			player->GetComponent<CTransform>().velocity = Vec2(0, 0);
 			if (player->GetComponent<CInput>().left)
 			{
-				player->GetComponent<CTransform>().velocity.x -= PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.x -= PLAYER_SPEED;
 			}
 			if (player->GetComponent<CInput>().right)
 			{
-				player->GetComponent<CTransform>().velocity.x += PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.x += PLAYER_SPEED;
 			}
 			if (player->GetComponent<CInput>().up)
 			{
-				player->GetComponent<CTransform>().velocity.y -= PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.y -= PLAYER_SPEED;
 			}
 			if (player->GetComponent<CInput>().down)
 			{
-				player->GetComponent<CTransform>().velocity.y += PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.y += PLAYER_SPEED;
 			}
 
 			if ( (player->GetComponent<CTransform>().velocity.x != 0 && player->GetComponent<CTransform>().velocity.y != 0) ) //dont let player move in x and y direction at once

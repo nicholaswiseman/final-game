@@ -25,6 +25,7 @@ enum class eAsset
 	Earth,
 	Ufo,
 	Asteroid,
+	Field,
 	AssetCount,
 };
 
@@ -40,5 +41,6 @@ enum class eTexture
 	Earth,
 	Ufo,
 	Asteroid,
+	Field,
 	TextureCount,
 };

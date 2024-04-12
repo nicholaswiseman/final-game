@@ -46,22 +46,24 @@ void Scene_Game::RegisterSceneActions()
 	RegisterAction(sf::Keyboard::T, eAction::ToggleTexture);
 	RegisterAction(sf::Keyboard::C, eAction::ToggleCollision);
 	RegisterAction(sf::Keyboard::G, eAction::ToggleGrid);
-	RegisterAction(sf::Keyboard::L, eAction::ToggleCamera);
 	RegisterAction(sf::Keyboard::W, eAction::MoveUp);
 	RegisterAction(sf::Keyboard::S, eAction::MoveDown);
 	RegisterAction(sf::Keyboard::A, eAction::MoveLeft);
 	RegisterAction(sf::Keyboard::D, eAction::MoveRight);
-	RegisterAction(sf::Keyboard::Space, eAction::Attack);
+	RegisterAction(sf::Keyboard::K, eAction::Attack);
+	RegisterAction(sf::Keyboard::L, eAction::Special);
 }
 
 void Scene_Game::Update()
 {
 	m_entityMgr.Update();
 	sCamera();
+	sTickTimers();
 	sEnemyBehavior();
 	sMovement();
 	sBackgroundScroll();
 	sParallax();
+	sCollision();
 	sRender();
 }
 
@@ -170,9 +172,9 @@ void Scene_Game::sRender()
 			{
 				e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 100));
 			}
-			else
+			else if(e->GetComponent<CInvincibility>().has && e->GetComponent<CInvincibility>().duration <= 0)
 			{
-				e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 255));
+				//e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 255));
 			}
 			m_pWindow->draw(e->GetComponent<CAnimation>().animation.GetSprite());
 		}
@@ -189,7 +191,7 @@ void Scene_Game::sRender()
 		}
 	}
 
-	//DrawHud();
+	DrawHud();
 
 	//if (m_drawGrid)
 	//{
@@ -197,6 +199,240 @@ void Scene_Game::sRender()
 	//}
 
 	m_pWindow->display();
+}
+
+void Scene_Game::DrawHud()
+{
+	EntityPointer pPlayer = m_entityMgr.getPlayer();
+	int hp = 0;
+	if (pPlayer != nullptr)
+	{
+		hp = pPlayer->GetComponent<CHealth>().health;
+	}
+	// Create a text object
+	sf::Text text;
+	text.setFont(m_pGame->GetAssets().GetFont(eAsset::SerifFont)); // Set the font
+	text.setString("HP: " + std::to_string(hp)); // Set the string to display
+	text.setCharacterSize(32); // Set the character size in pixels
+	text.setFillColor(sf::Color::Red); // Set the fill color
+	text.setPosition(50, 50); // Set the position of the text
+	text.setOutlineColor(sf::Color::Black);
+	text.setOutlineThickness(2);
+
+	sf::View worldView = m_pWindow->getView();
+	sf::View hudView(sf::FloatRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
+	m_pWindow->setView(hudView);
+	m_pWindow->draw(text);
+	m_pWindow->setView(worldView);
+}
+
+void Scene_Game::sCombat()
+{
+
+}
+
+void Scene_Game::sTickTimers()
+{
+	EntityPointer pPlayer = m_entityMgr.getPlayer();
+	if (pPlayer == nullptr) { return; }
+
+	EntityList allEntities = *(m_entityMgr.getEntities());
+	for (EntityPointer e : allEntities)
+	{
+		if (e->GetComponent<CInvincibility>().has && e->GetComponent<CInvincibility>().duration > 0)
+		{
+			pPlayer->GetComponent<CInvincibility>().duration -= 1;
+		}
+
+		if (e->GetComponent<CLifetime>().has && e->GetComponent<CLifetime>().lifetimeFrames > 0)
+		{
+			e->GetComponent<CLifetime>().lifetimeFrames -= 1;
+			if (e->GetComponent<CLifetime>().lifetimeFrames == 0)
+			{
+				e->markInactive();
+			}
+		}
+	}
+
+
+
+
+}
+
+void Scene_Game::sCollision()
+{
+	EntityPointer pPlayer = m_entityMgr.getPlayer();
+	EntityList attacks = *(m_entityMgr.getEntities(eEntityTag::Attack));
+	EntityList tiles = *(m_entityMgr.getEntities(eEntityTag::Tile));
+	EntityList enemies = *(m_entityMgr.getEntities(eEntityTag::Enemy));
+	EntityList items = *(m_entityMgr.getEntities(eEntityTag::Item));
+
+	for (EntityPointer pTile : tiles)
+	{
+		Vec2 overlap = DetectOverlap(pPlayer, pTile);
+		if (overlap.x > 0 && overlap.y > 0)
+		{
+			ResolveCollision(pPlayer, pTile);
+		}
+	}
+
+	for (EntityPointer enemy : enemies)
+	{
+		for (EntityPointer pTile : tiles)
+		{
+			Vec2 overlap = DetectOverlap(enemy, pTile);
+			if (overlap.x > 0 && overlap.y > 0)
+			{
+				ResolveCollision(enemy, pTile);
+			}
+		}
+
+		Vec2 overlap = DetectOverlap(enemy, pPlayer);
+		if (overlap.x > 0 && overlap.y > 0)
+		{
+			ResolveEnemyPlayerCollision(enemy, pPlayer);
+		}
+	}
+
+	for (EntityPointer pAttack : attacks)
+	{
+		if (pAttack->GetComponent<CCollision>().has == false) { continue; }
+		for (EntityPointer pEnemy : enemies)
+		{
+			Vec2 overlap = DetectOverlap(pAttack, pEnemy);
+			if (overlap.x > 0 && overlap.y > 0)
+			{
+				ResolveAttackCollision(pAttack, pEnemy);
+			}
+		}
+	}
+
+	for (EntityPointer pItem : items)
+	{
+		if (pItem->GetComponent<CCollision>().has == false) { continue; }
+		Vec2 overlap = DetectOverlap(pItem, pPlayer);
+		if (overlap.x > 0 && overlap.y > 0)
+		{
+			//ResolveItemPickUp(pItem);
+		}
+	}
+}
+
+void Scene_Game::ResolveCollision(EntityPointer a, EntityPointer b)
+{
+	Vec2 prevOverlap = DetectPreviousOverlap(a, b);
+	Vec2 posA = a->GetComponent<CTransform>().pos;
+	Vec2 boxA = Vec2(a->GetComponent<CBoundingBox>().box.getSize().x, a->GetComponent<CBoundingBox>().box.getSize().y);
+	Vec2 posB = b->GetComponent<CTransform>().pos;
+	Vec2 boxB = Vec2(b->GetComponent<CBoundingBox>().box.getSize().x, b->GetComponent<CBoundingBox>().box.getSize().y);
+	Vec2 newPosA = posA;
+
+	if (prevOverlap.y > 0) //movement came from the side
+	{
+		if (posA.x > posB.x) //a is to the right of b
+		{
+			newPosA.x = posB.x + (boxB.x / 2) + (boxA.x / 2);
+		}
+		else
+		{
+			newPosA.x = posB.x - (boxB.x / 2) - (boxA.x / 2);
+		}
+	}
+	else
+	{
+		if (posA.y > posB.y) //a is below b
+		{
+			newPosA.y = posB.y + (boxB.y / 2) + (boxA.y / 2);
+		}
+		else
+		{
+			newPosA.y = posB.y - (boxB.y / 2) - (boxA.y / 2);
+		}
+	}
+
+	a->GetComponent<CTransform>().pos = newPosA;
+}
+
+Vec2 Scene_Game::DetectOverlap(EntityPointer a, EntityPointer b)
+{
+	if (a == nullptr || b == nullptr) { return Vec2(0, 0); }
+	if (!a->GetComponent<CTransform>().has || !a->GetComponent<CBoundingBox>().has || !a->GetComponent<CCollision>().has)
+	{
+		return Vec2(0, 0);
+	}
+	if (!b->GetComponent<CTransform>().has || !b->GetComponent<CBoundingBox>().has || !b->GetComponent<CCollision>().has)
+	{
+		return Vec2(0, 0);
+	}
+	Vec2 posA = a->GetComponent<CTransform>().pos;
+	Vec2 boxA = Vec2(a->GetComponent<CBoundingBox>().box.getSize().x, a->GetComponent<CBoundingBox>().box.getSize().y);
+	Vec2 posB = b->GetComponent<CTransform>().pos;
+	Vec2 boxB = Vec2(b->GetComponent<CBoundingBox>().box.getSize().x, b->GetComponent<CBoundingBox>().box.getSize().y);
+
+	Vec2 delta = Vec2(posA.x - posB.x, posA.y - posB.y);
+	if (delta.x < 0) { delta.x *= -1; }
+	if (delta.y < 0) { delta.y *= -1; }
+
+	float overlapX = (boxA.x / 2) + (boxB.x / 2) - delta.x;
+	float overlapY = (boxA.y / 2) + (boxB.y / 2) - delta.y;
+	if (overlapX < 0) { overlapX = 0; }
+	if (overlapY < 0) { overlapY = 0; }
+
+	return Vec2(overlapX, overlapY);
+}
+
+Vec2 Scene_Game::DetectPreviousOverlap(EntityPointer a, EntityPointer b)
+{
+	if (!a->GetComponent<CTransform>().has || !a->GetComponent<CBoundingBox>().has || !a->GetComponent<CCollision>().has)
+	{
+		return Vec2(0, 0);
+	}
+	if (!b->GetComponent<CTransform>().has || !b->GetComponent<CBoundingBox>().has || !b->GetComponent<CCollision>().has)
+	{
+		return Vec2(0, 0);
+	}
+	Vec2 posA = a->GetComponent<CTransform>().prevPos;
+	Vec2 boxA = Vec2(a->GetComponent<CBoundingBox>().box.getSize().x, a->GetComponent<CBoundingBox>().box.getSize().y);
+	Vec2 posB = b->GetComponent<CTransform>().prevPos;
+	Vec2 boxB = Vec2(b->GetComponent<CBoundingBox>().box.getSize().x, b->GetComponent<CBoundingBox>().box.getSize().y);
+
+	Vec2 delta = Vec2(posA.x - posB.x, posA.y - posB.y);
+	if (delta.x < 0) { delta.x *= -1; }
+	if (delta.y < 0) { delta.y *= -1; }
+
+	float overlapX = (boxA.x / 2) + (boxB.x / 2) - delta.x;
+	float overlapY = (boxA.y / 2) + (boxB.y / 2) - delta.y;
+	if (overlapX < 0) { overlapX = 0; }
+	if (overlapY < 0) { overlapY = 0; }
+
+	return Vec2(overlapX, overlapY);
+}
+
+void Scene_Game::ResolveAttackCollision(EntityPointer pAttack, EntityPointer pTarget)
+{
+	if (pAttack->GetComponent<CDamage>().has && pTarget->GetComponent<CHealth>().has)
+	{
+		pTarget->GetComponent<CHealth>().health -= pAttack->GetComponent<CDamage>().damage;
+		pAttack->GetComponent<CCollision>().has = false;
+
+		pAttack->markInactive();
+
+		if (pTarget->GetComponent<CHealth>().health <= 0)
+		{
+			pTarget->markInactive();
+		}
+	}
+}
+
+void Scene_Game::ResolveEnemyPlayerCollision(EntityPointer pEnemy, EntityPointer pPlayer)
+{
+	if (pPlayer->GetComponent<CInvincibility>().duration > 0) { return; } //skip if player has i frames
+	pPlayer->GetComponent<CHealth>().health -= 1;
+	pPlayer->GetComponent<CInvincibility>().duration = NUM_I_FRAMES;
+	if (pPlayer->GetComponent<CHealth>().health <= 0)
+	{
+		pPlayer->markInactive();
+	}
 }
 
 void Scene_Game::RenderBackground()
@@ -267,6 +503,10 @@ void Scene_Game::DoAction(Action action)
 			{
 				SpawnBullet();
 			}
+			break;
+		case eAction::Special:
+			SpawnForcefield();
+			break;
 		case eAction::ActionCount:
 			break;
 		}
@@ -306,9 +546,17 @@ void Scene_Game::sMovement()
 	EntityList attacks = *(m_entityMgr.getEntities(eEntityTag::Attack));
 	for (EntityPointer attack : attacks)
 	{
-		attack->GetComponent<CTransform>().prevPos = attack->GetComponent<CTransform>().pos;
-		attack->GetComponent<CTransform>().pos.x += attack->GetComponent<CTransform>().velocity.x;
-		attack->GetComponent<CTransform>().pos.y += attack->GetComponent<CTransform>().velocity.y;
+		if (attack->GetComponent<CAnimation>().animation.GetName() == eAsset::Field)
+		{
+			attack->GetComponent<CTransform>().pos = m_entityMgr.getPlayer()->GetComponent<CTransform>().pos;
+		}
+		else
+		{
+			attack->GetComponent<CTransform>().prevPos = attack->GetComponent<CTransform>().pos;
+			attack->GetComponent<CTransform>().pos.x += attack->GetComponent<CTransform>().velocity.x;
+			attack->GetComponent<CTransform>().pos.y += attack->GetComponent<CTransform>().velocity.y;
+		}
+
 	}
 }
 
@@ -336,22 +584,22 @@ void Scene_Game::UpdatePlayerMovement()
 			player->GetComponent<CTransform>().velocity = Vec2(0, 0);
 			if (player->GetComponent<CInput>().left)
 			{
-				player->GetComponent<CTransform>().velocity.x -= PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.x -= PLAYER_SPEED;
 				//player->GetComponent<CTransform>().angle = -90;
 			}
 			if (player->GetComponent<CInput>().right)
 			{
-				player->GetComponent<CTransform>().velocity.x += PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.x += PLAYER_SPEED;
 				//player->GetComponent<CTransform>().angle = 90;
 			}
 			if (player->GetComponent<CInput>().up)
 			{
-				player->GetComponent<CTransform>().velocity.y -= PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.y -= PLAYER_SPEED;
 				//player->GetComponent<CTransform>().angle = 0;
 			}
 			if (player->GetComponent<CInput>().down)
 			{
-				player->GetComponent<CTransform>().velocity.y += PLAYER_WALK_SPEED;
+				player->GetComponent<CTransform>().velocity.y += PLAYER_SPEED;
 				//player->GetComponent<CTransform>().angle = 180;
 			}
 
@@ -421,7 +669,39 @@ void Scene_Game::SpawnBullet()
 	boundBox.setFillColor(sf::Color::Red);
 	pBullet->AddComponent<CBoundingBox>(boundBox);
 
+	pBullet->AddComponent<CLifetime>(BULLET_LIFE);
+
 	pBullet->AddComponent<CCollision>();
+}
+
+void Scene_Game::SpawnForcefield()
+{
+	EntityPointer pPlayer = m_entityMgr.getPlayer();
+	if (pPlayer == nullptr) { return; }
+
+	Vec2 spawnPoint = pPlayer->GetComponent<CTransform>().pos;
+	Vec2 bulletVelocity = pPlayer->GetComponent<CTransform>().velocity;
+
+	EntityPointer pField = m_entityMgr.addEntity(eEntityTag::Attack);
+
+	pField->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Field));
+	pField->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255.0, 255.0, 255.0, 100));
+
+	pField->AddComponent<CTransform>();
+	pField->GetComponent<CTransform>().pos = spawnPoint;
+	pField->GetComponent<CTransform>().angle = m_entityMgr.getPlayer()->GetComponent<CTransform>().angle;
+	pField->GetComponent<CTransform>().velocity = bulletVelocity;
+
+	sf::RectangleShape boundBox = sf::RectangleShape(pField->GetComponent<CAnimation>().animation.GetSize().ToSFMLVec2());
+	boundBox.setSize(sf::Vector2f(boundBox.getSize().x, boundBox.getSize().y));
+	boundBox.setOrigin(boundBox.getSize().x / 2, boundBox.getSize().y / 2);
+	boundBox.setFillColor(sf::Color::Red);
+	pField->AddComponent<CBoundingBox>(boundBox);
+
+	pField->AddComponent<CLifetime>(FIELD_LIFE);
+
+
+	pField->AddComponent<CCollision>();
 }
 
 Vec2 Scene_Game::CalculateBulletSpawnPoint()
@@ -448,7 +728,7 @@ Vec2 Scene_Game::CalculateBulletSpeed()
 	{
 		float angle = ConvertTransformRotationToRads(pPlayer->GetComponent<CTransform>().angle);
 		Vec2 direction = Vec2(cos(angle), -1*sin(angle));
-		speed = direction * 5.0f;
+		speed = direction * BULLET_SPEED;
 	}
 
 	return speed;
@@ -464,19 +744,23 @@ void Scene_Game::sBackgroundScroll()
 	EntityList bgs = *(m_entityMgr.getEntities(eEntityTag::Background));
 	for (EntityPointer bg : bgs)
 	{
-		float bgHeight = bg->GetComponent<CAnimation>().animation.GetSize().y;
-		float bgCenter = bg->GetComponent<CTransform>().pos.y;
-		float topOfBg = bgCenter - bgHeight / 2.0f;
-		float cameraHeight = m_pWindow->getView().getSize().y;
-		float cameraCenter = m_pWindow->getView().getCenter().y;
-		float bottomOfView = cameraCenter + cameraHeight / 2.0f;
-
-		bool isOffScreen = topOfBg > bottomOfView;
-		if (isOffScreen)
+		if (IsEntityOffScreen(bg))
 		{
-			bg->GetComponent<CTransform>().pos.y -= 2.0f * bgHeight;
+			bg->GetComponent<CTransform>().pos.y -= 2.0f * bg->GetComponent<CAnimation>().animation.GetSize().y;
 		}
 	}
+}
+
+bool Scene_Game::IsEntityOffScreen(EntityPointer e)
+{
+	float eHeight = e->GetComponent<CAnimation>().animation.GetSize().y;
+	float eCenter = e->GetComponent<CTransform>().pos.y;
+	float topOfE = eCenter - eHeight / 2.0f;
+	float cameraHeight = m_pWindow->getView().getSize().y;
+	float cameraCenter = m_pWindow->getView().getCenter().y;
+	float bottomOfView = cameraCenter + cameraHeight / 2.0f;
+
+	return topOfE > bottomOfView;
 }
 
 void Scene_Game::sEnemyBehavior()

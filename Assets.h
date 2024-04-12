@@ -22,12 +22,13 @@ private:
 		{eTexture::Link, "assets/link.png"},
 		{eTexture::Overworld, "assets/overworld.png"},
 		{eTexture::Monsters, "assets/monsters-overworld.png"},
-		{eTexture::Ship2D, "assets/space/Ship_2_D_Small.png"},
+		{eTexture::Ship2D, "assets/ships/Ship_1.png"},
 		{eTexture::Bullet, "assets/space/bullet.png"},
 		{eTexture::SpaceBg, "assets/space/space-bg.png"},
 		{eTexture::Earth, "assets/space/earf.png"},
 		{eTexture::Ufo, "assets/space/ufo.png"},
-		{eTexture::Asteroid, "assets/space/asteroid.png"}
+		{eTexture::Asteroid, "assets/space/asteroid.png"},
+		{eTexture::Field, "assets/weapons/field.png"}
 	};
 
 	typedef size_t numFrames;
@@ -78,7 +79,7 @@ private:
 		{eAsset::Meat, eTexture::Link, 1, 0, 0,
 			{sf::IntRect(299, 185, 8, 16)}},
 		{eAsset::PlayerShip, eTexture::Ship2D, 1, 0, 0,
-			{sf::IntRect(0, 0, 128, 128)}},
+			{sf::IntRect(0, 0, 32, 32)}},
 		{eAsset::Bullet, eTexture::Bullet, 1, 0, 0,
 			{sf::IntRect(0, 0, 8, 32)}},
 		{eAsset::SpaceBg, eTexture::SpaceBg, 1, 0, 0,
@@ -88,6 +89,8 @@ private:
 		{eAsset::Ufo, eTexture::Ufo, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 32)}},
 		{eAsset::Asteroid, eTexture::Asteroid, 1, 0, 0,
+			{sf::IntRect(0, 0, 64, 64)}},
+		{eAsset::Field, eTexture::Field, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 64)}},
 	};
 

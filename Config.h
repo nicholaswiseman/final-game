@@ -8,9 +8,13 @@
 
 #define GRID_SIZE_PIXELS 64
 
-#define PLAYER_WALK_SPEED 5
+#define PLAYER_SPEED 5
+#define BULLET_SPEED 10
 #define ENEMY_CHASE_SPEED 3
 
 #define NUM_I_FRAMES 25
 
 #define SCREEN_SCROLL_SPEED 1
+
+#define BULLET_LIFE 25
+#define FIELD_LIFE 60

@@ -9,6 +9,15 @@ public:
     void sCamera();
     void sDoAction() override;
     void sRender() override;
+    void DrawHud();
+    void sCombat();
+    void sTickTimers();
+    void sCollision();
+    void ResolveCollision(EntityPointer a, EntityPointer b);
+    Vec2 DetectOverlap(EntityPointer a, EntityPointer b);
+    Vec2 DetectPreviousOverlap(EntityPointer a, EntityPointer b);
+    void ResolveAttackCollision(EntityPointer pAttack, EntityPointer pTarget);
+    void ResolveEnemyPlayerCollision(EntityPointer pEnemy, EntityPointer pPlayer);
     void RenderBackground();
     void DoAction(Action action) override;
 
@@ -22,6 +31,8 @@ public:
 
     void SpawnBullet();
 
+    void SpawnForcefield();
+
     Vec2 CalculateBulletSpawnPoint();
 
     Vec2 CalculateBulletSpeed();
@@ -29,6 +40,8 @@ public:
     float ConvertTransformRotationToRads(float rotation);
 
     void sBackgroundScroll();
+
+    bool IsEntityOffScreen(EntityPointer e);
 
     void sEnemyBehavior();
 
