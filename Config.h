@@ -18,3 +18,6 @@
 
 #define BULLET_LIFE 25
 #define FIELD_LIFE 60
+
+#define ATTACK_COOLDOWN 15
+#define SPECIAL_COOLDOWN 600

@@ -26,6 +26,7 @@ enum class eAsset
 	Ufo,
 	Asteroid,
 	Field,
+	Cannon,
 	AssetCount,
 };
 
@@ -42,5 +43,6 @@ enum class eTexture
 	Ufo,
 	Asteroid,
 	Field,
+	Cannon,
 	TextureCount,
 };

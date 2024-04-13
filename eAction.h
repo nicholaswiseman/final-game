@@ -27,3 +27,11 @@ enum class eActionType
 	Stop,
 	ActionTypeCount
 };
+
+enum class eSpecial
+{
+	Forcefield,
+	ElectronCannon,
+	Disabled,
+	SpecialCount,
+};

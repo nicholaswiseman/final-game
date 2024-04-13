@@ -175,3 +175,33 @@ public:
 	}
 	int lifetimeFrames;
 };
+
+class CAttackCoolDown : public Component
+{
+public:
+	CAttackCoolDown()
+	{
+
+	}
+	CAttackCoolDown(int time)
+	{
+		cooldown = time;
+		has = true;
+	}
+	int cooldown;
+};
+
+class CSpecialCoolDown : public Component
+{
+public:
+	CSpecialCoolDown()
+	{
+
+	}
+	CSpecialCoolDown(int time)
+	{
+		cooldown = time;
+		has = true;
+	}
+	int cooldown;
+};

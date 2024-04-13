@@ -28,7 +28,8 @@ private:
 		{eTexture::Earth, "assets/space/earf.png"},
 		{eTexture::Ufo, "assets/space/ufo.png"},
 		{eTexture::Asteroid, "assets/space/asteroid.png"},
-		{eTexture::Field, "assets/weapons/field.png"}
+		{eTexture::Field, "assets/weapons/field.png"},
+		{eTexture::Cannon, "assets/weapons/cannon.png"}
 	};
 
 	typedef size_t numFrames;
@@ -91,6 +92,8 @@ private:
 		{eAsset::Asteroid, eTexture::Asteroid, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 64)}},
 		{eAsset::Field, eTexture::Field, 1, 0, 0,
+			{sf::IntRect(0, 0, 64, 64)}},
+		{eAsset::Cannon, eTexture::Cannon, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 64)}},
 	};
 

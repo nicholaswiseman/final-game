@@ -6,7 +6,7 @@
 
 class EntityManager;
 
-typedef std::tuple<
+typedef std::tuple <
 	CTransform,
 	CInput,
 	CBoundingBox,
@@ -18,7 +18,9 @@ typedef std::tuple<
 	CBlockVision,
 	CInvincibility,
 	CParallax,
-	CLifetime
+	CLifetime,
+	CAttackCoolDown,
+	CSpecialCoolDown
 > ComponentTuple;
 
 class Entity

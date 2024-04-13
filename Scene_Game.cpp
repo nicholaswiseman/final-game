@@ -98,6 +98,9 @@ void Scene_Game::SpawnPlayer()
 	player->GetComponent<CInput>().canAttack = true;
 
 	player->AddComponent<CHealth>(5);
+
+	player->AddComponent<CAttackCoolDown>(0);
+	player->AddComponent<CSpecialCoolDown>(0);
 }
 
 void Scene_Game::SpawnEnemy()
@@ -174,7 +177,7 @@ void Scene_Game::sRender()
 			}
 			else if(e->GetComponent<CInvincibility>().has && e->GetComponent<CInvincibility>().duration <= 0)
 			{
-				//e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 255));
+				e->GetComponent<CAnimation>().animation.GetSprite().setColor(sf::Color(255, 255, 255, 255));
 			}
 			m_pWindow->draw(e->GetComponent<CAnimation>().animation.GetSprite());
 		}
@@ -209,10 +212,15 @@ void Scene_Game::DrawHud()
 	{
 		hp = pPlayer->GetComponent<CHealth>().health;
 	}
+
+	std::string hudText =
+		"HP: " + std::to_string(hp) + "\n"
+		+ "Special: " + specialHudMap.at(m_currentSpecial) + "\n";
+
 	// Create a text object
 	sf::Text text;
 	text.setFont(m_pGame->GetAssets().GetFont(eAsset::SerifFont)); // Set the font
-	text.setString("HP: " + std::to_string(hp)); // Set the string to display
+	text.setString(hudText); // Set the string to display
 	text.setCharacterSize(32); // Set the character size in pixels
 	text.setFillColor(sf::Color::Red); // Set the fill color
 	text.setPosition(50, 50); // Set the position of the text
@@ -252,11 +260,17 @@ void Scene_Game::sTickTimers()
 				e->markInactive();
 			}
 		}
+
+		if (e->GetComponent<CAttackCoolDown>().has && e->GetComponent<CAttackCoolDown>().cooldown > 0)
+		{
+			pPlayer->GetComponent<CAttackCoolDown>().cooldown -= 1;
+		}
+
+		if (e->GetComponent<CSpecialCoolDown>().has && e->GetComponent<CSpecialCoolDown>().cooldown > 0)
+		{
+			pPlayer->GetComponent<CSpecialCoolDown>().cooldown -= 1;
+		}
 	}
-
-
-
-
 }
 
 void Scene_Game::sCollision()
@@ -499,13 +513,18 @@ void Scene_Game::DoAction(Action action)
 			m_entityMgr.getPlayer()->GetComponent<CInput>().right = true;
 			break;
 		case eAction::Attack:
-			if (m_entityMgr.getPlayer()->GetComponent<CInput>().canAttack)
+			if (m_entityMgr.getPlayer()->GetComponent<CAttackCoolDown>().cooldown == 0)
 			{
+				m_entityMgr.getPlayer()->GetComponent<CAttackCoolDown>().cooldown = ATTACK_COOLDOWN;
 				SpawnBullet();
 			}
 			break;
 		case eAction::Special:
-			SpawnForcefield();
+			if (m_entityMgr.getPlayer()->GetComponent<CSpecialCoolDown>().cooldown == 0)
+			{
+				m_entityMgr.getPlayer()->GetComponent<CSpecialCoolDown>().cooldown = SPECIAL_COOLDOWN;
+				DoSpecial();
+			}
 			break;
 		case eAction::ActionCount:
 			break;
@@ -529,6 +548,22 @@ void Scene_Game::DoAction(Action action)
 			m_entityMgr.getPlayer()->GetComponent<CInput>().right = false;
 			break;
 		}
+	}
+}
+
+void Scene_Game::DoSpecial()
+{
+	switch (m_currentSpecial)
+	{
+	case eSpecial::ElectronCannon:
+		SpawnCannonShot();
+		break;
+	case eSpecial::Forcefield:
+		SpawnForcefield();
+		break;
+	case eSpecial::Disabled:
+	default:
+		break;
 	}
 }
 
@@ -670,6 +705,31 @@ void Scene_Game::SpawnBullet()
 	pBullet->AddComponent<CBoundingBox>(boundBox);
 
 	pBullet->AddComponent<CLifetime>(BULLET_LIFE);
+
+	pBullet->AddComponent<CCollision>();
+}
+
+void Scene_Game::SpawnCannonShot()
+{
+	Vec2 spawnPoint = CalculateBulletSpawnPoint();
+	Vec2 bulletVelocity = CalculateBulletSpeed();
+
+	EntityPointer pBullet = m_entityMgr.addEntity(eEntityTag::Attack);
+
+	pBullet->AddComponent<CAnimation>(m_pGame->GetAssets().GetAnimation(eAsset::Cannon));
+
+	pBullet->AddComponent<CTransform>();
+	pBullet->GetComponent<CTransform>().pos = spawnPoint;
+	pBullet->GetComponent<CTransform>().angle = m_entityMgr.getPlayer()->GetComponent<CTransform>().angle;
+	pBullet->GetComponent<CTransform>().velocity = bulletVelocity;
+
+	sf::RectangleShape boundBox = sf::RectangleShape(pBullet->GetComponent<CAnimation>().animation.GetSize().ToSFMLVec2());
+	boundBox.setSize(sf::Vector2f(boundBox.getSize().x, boundBox.getSize().y));
+	boundBox.setOrigin(boundBox.getSize().x / 2, boundBox.getSize().y / 2);
+	boundBox.setFillColor(sf::Color::Red);
+	pBullet->AddComponent<CBoundingBox>(boundBox);
+
+	pBullet->AddComponent<CLifetime>(BULLET_LIFE*5);
 
 	pBullet->AddComponent<CCollision>();
 }

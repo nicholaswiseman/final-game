@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+
 class Scene_Game : public Scene
 {
 public:
@@ -21,6 +22,8 @@ public:
     void RenderBackground();
     void DoAction(Action action) override;
 
+    void DoSpecial();
+
     void sMovement();
 
     void sParallax();
@@ -30,6 +33,8 @@ public:
     void KeepEntityInWindow(EntityPointer e);
 
     void SpawnBullet();
+
+    void SpawnCannonShot();
 
     void SpawnForcefield();
 
@@ -61,5 +66,12 @@ private:
     std::string m_levelPath;
     bool m_drawTextures = true;
     bool m_drawCollision = false;
+    eSpecial m_currentSpecial = eSpecial::Forcefield;
+    const std::map<eSpecial, std::string> specialHudMap =
+    {
+        {eSpecial::ElectronCannon, "Electron Cannon"},
+        {eSpecial::Forcefield, "Force Field"},
+        {eSpecial::Disabled, "Disabled"},
+    };
 };
 
