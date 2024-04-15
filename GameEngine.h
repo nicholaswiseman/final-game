@@ -33,6 +33,7 @@ public:
 	std::shared_ptr<Scene> getCurrentScene();
 	void UpdateView(sf::View newView);
 	void Play();
+	void ReturnToMainMenu();
 	void ChangeScene(eScene sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene);
 };
 

@@ -100,7 +100,7 @@ void GameEngine::sUserInput()
             if (actMap.find(event.key.code) == actMap.end()) { continue; }
 
             const eActionType actionType = (event.type == sf::Event::KeyPressed) ? eActionType::Start : eActionType::Stop;
-            getCurrentScene()->DoAction(Action(actMap.at(event.key.code), actionType));
+            getCurrentScene()->sDoAction(Action(actMap.at(event.key.code), actionType));
         }
     }
 }
@@ -113,4 +113,9 @@ void GameEngine::UpdateView(sf::View newView)
 void GameEngine::Play()
 {
     ChangeScene(eScene::Play, std::make_shared<Scene_Game>("assets/level1.txt", &m_window, this), false);
+}
+
+void GameEngine::ReturnToMainMenu()
+{
+    ChangeScene(eScene::Menu, std::make_shared<Scene_StartMenu>(&m_window, this), true);
 }

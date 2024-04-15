@@ -4,7 +4,7 @@ class Scene_StartMenu : public Scene
 {
 public:
     void Update() override;
-    void sDoAction() override;
+    void sDoAction(Action action) override;
     void DoAction(Action action) override;
     void OptionSelection();
     void sRender() override;

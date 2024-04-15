@@ -13,8 +13,9 @@ void Scene_StartMenu::Update()
     sRender();
 }
 
-void Scene_StartMenu::sDoAction()
+void Scene_StartMenu::sDoAction(Action action)
 {
+    DoAction(action);
 }
 
 void Scene_StartMenu::DoAction(Action action)

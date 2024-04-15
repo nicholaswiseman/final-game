@@ -11,6 +11,7 @@ void Scene_Game::Initialize(const std::string& levelPath)
 {
 	CreateBackground();
 	RegisterSceneActions();
+	CreateMenus();
 	SpawnPlayer();
 	SpawnEnemy();
 	//LoadLevel(levelPath);
@@ -45,6 +46,8 @@ void Scene_Game::RegisterSceneActions()
 	RegisterAction(sf::Keyboard::P, eAction::Pause);
 	RegisterAction(sf::Keyboard::T, eAction::ToggleTexture);
 	RegisterAction(sf::Keyboard::C, eAction::ToggleCollision);
+	RegisterAction(sf::Keyboard::Tab, eAction::ToggleHotMenu);
+	RegisterAction(sf::Keyboard::Enter, eAction::TogglePauseMenu);
 	RegisterAction(sf::Keyboard::G, eAction::ToggleGrid);
 	RegisterAction(sf::Keyboard::W, eAction::MoveUp);
 	RegisterAction(sf::Keyboard::S, eAction::MoveDown);
@@ -56,15 +59,22 @@ void Scene_Game::RegisterSceneActions()
 
 void Scene_Game::Update()
 {
-	m_entityMgr.Update();
-	sCamera();
-	sTickTimers();
-	sEnemyBehavior();
-	sMovement();
-	sBackgroundScroll();
-	sParallax();
-	sCollision();
+	bool slowMotionUpdate = (m_currentFrame % 10 == 0);
+	bool timeStopped = m_isPauseMenuActive || (m_isHotMenuActive && !slowMotionUpdate);
+
+	if (!timeStopped)
+	{
+		m_entityMgr.Update();
+		sCamera();
+		sTickTimers();
+		sEnemyBehavior();
+		sMovement();
+		sBackgroundScroll();
+		sParallax();
+		sCollision();
+	}
 	sRender();
+	m_currentFrame++;
 }
 
 void Scene_Game::sCamera()
@@ -148,7 +158,7 @@ void Scene_Game::SpawnEnemy()
 void Scene_Game::sRender()
 {
 	m_pWindow->clear(sf::Color::Black);
-
+	
 	RenderBackground();
 
 	EntityList allEntities = *(m_entityMgr.getEntities());
@@ -200,7 +210,7 @@ void Scene_Game::sRender()
 	//{
 	//	DrawGrid();
 	//}
-
+	RenderItemMenu();
 	m_pWindow->display();
 }
 
@@ -470,8 +480,119 @@ void Scene_Game::RenderBackground()
 	}
 }
 
-void Scene_Game::sDoAction()
+void Scene_Game::sDoAction(Action action)
 {
+	if (m_isPauseMenuActive)
+	{
+		PauseAction(action);
+	}
+	else if (m_isHotMenuActive)
+	{
+		HotMenuAction(action);
+	}
+	else
+	{
+		DoAction(action);
+	}
+	
+}
+
+void Scene_Game::PauseAction(Action action)
+{
+	if (action.GetType() == eActionType::Start)
+	{
+		switch (action.GetName())
+		{
+		case eAction::Pause:
+			m_isPaused = !m_isPaused;
+			break;
+		case eAction::Quit:
+			m_isEnded = true;
+			break;
+		case eAction::TogglePauseMenu:
+			m_isPauseMenuActive = !m_isPauseMenuActive;
+			break;
+		case eAction::MoveUp:
+			m_selectedPauseIndex = (m_selectedPauseIndex - 1 + m_pauseMenuItems.size()) % m_pauseMenuItems.size();
+			break;
+		case eAction::MoveDown:
+			m_selectedPauseIndex = (m_selectedPauseIndex + 1) % m_pauseMenuItems.size();
+			break;
+		case eAction::MoveLeft:
+			break;
+		case eAction::MoveRight:
+			break;
+		case eAction::Attack:
+			SelectPauseMenuOption();
+			break;
+		case eAction::Special:
+			break;
+		case eAction::ActionCount:
+			break;
+		}
+	}
+}
+
+void Scene_Game::SelectPauseMenuOption()
+{
+	if (m_pauseMenuItems[m_selectedPauseIndex].getString() == "Resume")
+	{
+		m_isPauseMenuActive = !m_isPauseMenuActive;
+	}
+	else if (m_pauseMenuItems[m_selectedPauseIndex].getString() == "Exit")
+	{
+		m_pGame->ReturnToMainMenu();
+	}
+}
+
+
+void Scene_Game::HotMenuAction(Action action)
+{
+	if (action.GetType() == eActionType::Start)
+	{
+		switch (action.GetName())
+		{
+		case eAction::Pause:
+			m_isPaused = !m_isPaused;
+			break;
+		case eAction::Quit:
+			m_isEnded = true;
+			break;
+		case eAction::ToggleHotMenu:
+			m_isHotMenuActive = !m_isHotMenuActive;
+			break;
+		case eAction::MoveUp:
+			m_selectedHotMenuIndex = (m_selectedHotMenuIndex - 1 + m_hotMenuItems.size()) % m_hotMenuItems.size();
+			break;
+		case eAction::MoveDown:
+			m_selectedHotMenuIndex = (m_selectedHotMenuIndex + 1) % m_hotMenuItems.size();
+			break;
+		case eAction::MoveLeft:
+			break;
+		case eAction::MoveRight:
+			break;
+		case eAction::Attack:
+			SelectHotMenuOption();
+			break;
+		case eAction::Special:
+			break;
+		case eAction::ActionCount:
+			break;
+		}
+	}
+}
+
+void Scene_Game::SelectHotMenuOption()
+{
+	if (m_hotMenuItems[m_selectedHotMenuIndex].getString() == specialHudMap.at(eSpecial::ElectronCannon))
+	{
+		m_currentSpecial = eSpecial::ElectronCannon;
+	}
+	if (m_hotMenuItems[m_selectedHotMenuIndex].getString() == specialHudMap.at(eSpecial::Forcefield))
+	{
+		m_currentSpecial = eSpecial::Forcefield;
+	}
+	m_isHotMenuActive = false;
 }
 
 void Scene_Game::DoAction(Action action)
@@ -493,6 +614,12 @@ void Scene_Game::DoAction(Action action)
 			break;
 		case eAction::ToggleCollision:
 			m_drawCollision = !m_drawCollision;
+			break;
+		case eAction::ToggleHotMenu:
+			m_isHotMenuActive = !m_isHotMenuActive;
+			break;
+		case eAction::TogglePauseMenu:
+			m_isPauseMenuActive = !m_isPauseMenuActive;
 			break;
 		case eAction::ToggleGrid:
 			//m_drawGrid = !m_drawGrid;
@@ -863,4 +990,80 @@ void Scene_Game::PatrolBehavior(EntityPointer e)
 	Vec2 newSpeed = target - e->GetComponent<CTransform>().pos;
 	newSpeed.Normalize(ENEMY_CHASE_SPEED);
 	e->GetComponent<CTransform>().velocity = newSpeed;
+}
+
+void Scene_Game::RenderItemMenu()
+{
+	sf::View worldView = m_pWindow->getView();
+	sf::View menuView(sf::FloatRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
+	m_pWindow->setView(menuView);
+	sf::Sprite bg;
+	if (m_isPauseMenuActive || m_isHotMenuActive)
+	{
+		bg = m_pGame->GetAssets().GetAnimation(eAsset::MenuBack).GetSprite();
+		bg.setPosition(WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
+		m_pWindow->draw(bg);
+	}
+
+	if (m_isPauseMenuActive)
+	{
+		for (size_t i = 0; i < m_pauseMenuItems.size(); i++)
+		{
+			if (i == m_selectedPauseIndex)
+			{
+				m_pauseMenuItems[i].setFillColor(sf::Color::Red); // Highlight selected item
+			}
+			else
+			{
+				m_pauseMenuItems[i].setFillColor(sf::Color::White);
+			}
+			m_pWindow->draw(m_pauseMenuItems[i]);
+		}
+	}
+
+	if (m_isHotMenuActive)
+	{
+		for (size_t i = 0; i < m_hotMenuItems.size(); i++)
+		{
+			if (i == m_selectedHotMenuIndex)
+			{
+				m_hotMenuItems[i].setFillColor(sf::Color::Red); // Highlight selected item
+			}
+			else
+			{
+				m_hotMenuItems[i].setFillColor(sf::Color::White);
+			}
+			m_pWindow->draw(m_hotMenuItems[i]);
+		}
+	}
+	m_pWindow->setView(worldView);
+}
+
+void Scene_Game::CreateMenus()
+{
+	sf::Font font = m_pGame->GetAssets().GetFont(eAsset::SerifFont);
+	std::vector<std::string> optionStrings = { "Resume", "Options", "Exit" };
+
+	for (size_t i = 0; i < optionStrings.size(); ++i)
+	{
+		sf::Text optionText(optionStrings[i], m_pGame->GetAssets().GetFont(eAsset::SerifFont), 24);
+		optionText.setFillColor(sf::Color::White);
+		optionText.setPosition(300.f, 200.f + i * 50.f);
+		m_pauseMenuItems.push_back(optionText);
+	}
+
+	std::vector<std::string> hotMenuOptionStrings;
+
+	for (const auto& pair : specialHudMap)
+	{
+		hotMenuOptionStrings.push_back(pair.second);
+	}
+
+	for (size_t i = 0; i < hotMenuOptionStrings.size(); ++i)
+	{
+		sf::Text optionText(hotMenuOptionStrings[i], m_pGame->GetAssets().GetFont(eAsset::SerifFont), 24);
+		optionText.setFillColor(sf::Color::White);
+		optionText.setPosition(300.f, 200.f + i * 50.f);
+		m_hotMenuItems.push_back(optionText);
+	}
 }

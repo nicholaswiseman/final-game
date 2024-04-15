@@ -27,6 +27,7 @@ enum class eAsset
 	Asteroid,
 	Field,
 	Cannon,
+	MenuBack,
 	AssetCount,
 };
 
@@ -44,5 +45,6 @@ enum class eTexture
 	Asteroid,
 	Field,
 	Cannon,
+	MenuBack,
 	TextureCount,
 };

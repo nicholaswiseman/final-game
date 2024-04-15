@@ -29,7 +29,8 @@ private:
 		{eTexture::Ufo, "assets/space/ufo.png"},
 		{eTexture::Asteroid, "assets/space/asteroid.png"},
 		{eTexture::Field, "assets/weapons/field.png"},
-		{eTexture::Cannon, "assets/weapons/cannon.png"}
+		{eTexture::Cannon, "assets/weapons/cannon.png"},
+		{eTexture::MenuBack, "assets/menu.png"}
 	};
 
 	typedef size_t numFrames;
@@ -95,6 +96,8 @@ private:
 			{sf::IntRect(0, 0, 64, 64)}},
 		{eAsset::Cannon, eTexture::Cannon, 1, 0, 0,
 			{sf::IntRect(0, 0, 64, 64)}},
+		{eAsset::MenuBack, eTexture::MenuBack, 1, 0, 0,
+			{sf::IntRect(0, 0, 256, 512)}}
 	};
 
 	void LoadAnimation(std::tuple<aniName, Assets::texture, Assets::numFrames, Assets::frameDuration, Assets::aniLifetime, Assets::TextRectList> animationConfig);

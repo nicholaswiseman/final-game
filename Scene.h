@@ -22,7 +22,7 @@ protected:
 public:
 	Scene(sf::RenderWindow* pWindow, GameEngine* pGame);
 	virtual void Update() = 0;
-	virtual void sDoAction() = 0;
+	virtual void sDoAction(Action action) = 0;
 	virtual void sRender() = 0;
 
 	void Simulate(int num);

@@ -28,7 +28,7 @@ public:
     bool m_linkCam = false;
 
     void Update() override;
-    void sDoAction() override;
+    void sDoAction(Action action) override;
     void sRender() override;
 
     void DrawHud();

@@ -8,7 +8,11 @@ public:
 
     void Update() override;
     void sCamera();
-    void sDoAction() override;
+    void sDoAction(Action action) override;
+    void PauseAction(Action action);
+    void SelectPauseMenuOption();
+    void HotMenuAction(Action action);
+    void SelectHotMenuOption();
     void sRender() override;
     void DrawHud();
     void sCombat();
@@ -52,6 +56,12 @@ public:
 
     void PatrolBehavior(EntityPointer e);
 
+    void RenderItemMenu();
+
+    void CreateMenus();
+
+    sf::Text CreateMenuItem(const sf::Font& font, const std::string& text, float x, float y);
+
     void Initialize(const std::string& levelPath);
 
     void CreateBackground();
@@ -73,5 +83,11 @@ private:
         {eSpecial::Forcefield, "Force Field"},
         {eSpecial::Disabled, "Disabled"},
     };
+    std::vector<sf::Text> m_hotMenuItems;
+    std::vector<sf::Text> m_pauseMenuItems;
+    bool m_isPauseMenuActive = false;
+    bool m_isHotMenuActive = false;
+    int m_selectedPauseIndex = 0;
+    int m_selectedHotMenuIndex = 0;
 };
 

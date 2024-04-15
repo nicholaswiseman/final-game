@@ -6,6 +6,8 @@ enum class eAction
 	Quit,
 	ToggleTexture,
 	ToggleCollision,
+	ToggleHotMenu,
+	TogglePauseMenu,
 	ToggleGrid,
 	ToggleCamera,
 	MoveLeft,

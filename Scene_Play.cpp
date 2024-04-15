@@ -311,7 +311,7 @@ void Scene_Play::Update()
 	sRender();
 }
 
-void Scene_Play::sDoAction()
+void Scene_Play::sDoAction(Action action)
 {
 
 }
