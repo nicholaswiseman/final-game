@@ -26,7 +26,6 @@ public:
 	virtual void sRender() = 0;
 
 	void Simulate(int num);
-	virtual void DoAction(Action action) = 0;
 	void RegisterAction(int input, eAction action);
 
 	size_t GetWidth() const;

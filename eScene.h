@@ -3,4 +3,5 @@ enum class eScene
 {
 	Play,
 	Menu,
+	Editor,
 };

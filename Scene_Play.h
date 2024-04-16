@@ -46,7 +46,7 @@ public:
     std::vector<std::string> ReadLevelFile(std::string levelPath);
     void SpawnPlayer();
     void SpawnMeat();
-    virtual void DoAction(Action action) override;
+    void DoAction(Action action);
     void sMovement();
     void sCollision();
     void ResolveItemPickUp(EntityPointer pItem);

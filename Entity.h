@@ -20,7 +20,8 @@ typedef std::tuple <
 	CParallax,
 	CLifetime,
 	CAttackCoolDown,
-	CSpecialCoolDown
+	CSpecialCoolDown,
+	CDraggable
 > ComponentTuple;
 
 class Entity

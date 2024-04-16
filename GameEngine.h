@@ -34,6 +34,7 @@ public:
 	void UpdateView(sf::View newView);
 	void Play();
 	void ReturnToMainMenu();
+	void LaunchLevelEditor();
 	void ChangeScene(eScene sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene);
 };
 

@@ -50,6 +50,11 @@ void Scene_StartMenu::OptionSelection()
     {
         m_pGame->Play();
     }
+    else if (m_menuOptions[m_selectedOptionIndex].getString() == "Level Editor")
+    {
+        m_pGame->LaunchLevelEditor();
+    }
+
 }
 
 void Scene_StartMenu::sRender()
@@ -83,7 +88,7 @@ void Scene_StartMenu::Initialize()
 {
     RegisterActions();
 
-    std::vector<std::string> optionStrings = { "New Game", "Load Game", "Options", "Exit" };
+    std::vector<std::string> optionStrings = { "New Game", "Load Game", "Options", "Level Editor", "Exit" };
 
     for (size_t i = 0; i < optionStrings.size(); ++i)
     {

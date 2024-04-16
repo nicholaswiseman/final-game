@@ -8,6 +8,7 @@ enum class eBehavior
 {
 	Patrol,
 	Chase,
+	Idle,
 };
 
 class Component
@@ -204,4 +205,15 @@ public:
 		has = true;
 	}
 	int cooldown;
+};
+
+
+class CDraggable : public Component
+{
+public:
+	CDraggable()
+	{
+
+	}
+	bool dragging = false;
 };

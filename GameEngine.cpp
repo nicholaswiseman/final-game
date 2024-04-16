@@ -3,6 +3,7 @@
 #include "Scene_StartMenu.h"
 #include "Scene_Play.h"
 #include "Scene_Game.h"
+#include "Scene_Editor.h"
 
 #include <iostream>
 #include <map>
@@ -81,17 +82,52 @@ void GameEngine::sUserInput()
         {
             Quit();
         }
-
-        if (event.type == sf::Event::KeyPressed)
+        
+        // Mouse button pressed
+        if (event.type == sf::Event::MouseButtonPressed)
         {
-            //TODO: put screen shot code somewhere
-            //sf::Texture texture;
-            //texture.create(m_window.getSize().x, m_window.getSize().y);
-            //texture.update(m_window);
-            //if (texture.copyToImage().saveToFile("test.png"))
-            //{
-            //    std::cout << "screenshot saved to " << "test.png" << std::endl;
-            //}
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                getCurrentScene()->sDoAction(Action(eAction::LClick, eActionType::Start));
+            }
+            if (event.mouseButton.button == sf::Mouse::Right) {
+                getCurrentScene()->sDoAction(Action(eAction::RClick, eActionType::Start));
+            }
+            if (event.mouseButton.button == sf::Mouse::Middle)
+            {
+            }
+        }
+
+        // Mouse button released
+        if (event.type == sf::Event::MouseButtonReleased)
+        {
+            if (event.mouseButton.button == sf::Mouse::Left)
+            {
+                getCurrentScene()->sDoAction(Action(eAction::LClick, eActionType::Stop));
+            }
+            if (event.mouseButton.button == sf::Mouse::Right)
+            {
+                getCurrentScene()->sDoAction(Action(eAction::RClick, eActionType::Stop));
+            }
+            if (event.mouseButton.button == sf::Mouse::Middle)
+            {
+            }
+        }
+
+        // Mouse wheel scrolled
+        if (event.type == sf::Event::MouseWheelScrolled)
+        {
+            if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel)
+            {
+                if (event.mouseWheelScroll.delta > 0)
+                {
+                    getCurrentScene()->sDoAction(Action(eAction::WheelUp, eActionType::Start));
+                }
+                else if (event.mouseWheelScroll.delta < 0)
+                {
+                    getCurrentScene()->sDoAction(Action(eAction::WheelDown, eActionType::Start));
+                }
+            }
         }
 
         if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased)
@@ -118,4 +154,9 @@ void GameEngine::Play()
 void GameEngine::ReturnToMainMenu()
 {
     ChangeScene(eScene::Menu, std::make_shared<Scene_StartMenu>(&m_window, this), true);
+}
+
+void GameEngine::LaunchLevelEditor()
+{
+    ChangeScene(eScene::Editor, std::make_shared<Scene_Editor>(&m_window, this), true);
 }

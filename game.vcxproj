@@ -161,6 +161,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="Scene_Editor.cpp" />
     <ClCompile Include="Scene_Game.cpp" />
     <ClCompile Include="Scene_Play.cpp" />
     <ClCompile Include="Scene_StartMenu.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Physics.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="Scene_Editor.h" />
     <ClInclude Include="Scene_Game.h" />
     <ClInclude Include="Scene_Play.h" />
     <ClInclude Include="Scene_StartMenu.h" />

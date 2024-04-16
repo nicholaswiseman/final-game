@@ -15,11 +15,17 @@ enum class eAction
 	MoveUp,
 	MoveDown,
 	Attack,
-	//menu actions
 	CursorUp,
 	CursorDown,
 	SelectOption,
 	Special,
+	New,
+	RClick,
+	LClick,
+	CycleLeft,
+	CycleRight,
+	WheelUp,
+	WheelDown,
 	ActionCount
 };
 

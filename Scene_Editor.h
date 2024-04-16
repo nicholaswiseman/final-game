@@ -1,20 +1,33 @@
 #pragma once
 #include "Scene.h"
 
-class Scene_Game : public Scene
+enum class eEditorView
+{
+    Main,
+    New,
+};
+
+class Scene_Editor : public Scene
 {
 public:
-    Scene_Game(const std::string& levelPath, sf::RenderWindow* pWindow, GameEngine* pGame);
+    Scene_Editor(sf::RenderWindow* pWindow, GameEngine* pGame);
 
     void Update() override;
+    void sDrag();
     void sCamera();
     void sDoAction(Action action) override;
+    void NewDoAction(Action action);
+    void AddEntity();
     void PauseAction(Action action);
     void SelectPauseMenuOption();
+    void MainDoAction(Action action);
+    void GrabEntity();
+    void ReleaseEntity();
     void HotMenuAction(Action action);
     void SelectHotMenuOption();
     void sRender() override;
     void DrawHud();
+    void RenderAssetPreview();
     void sCombat();
     void sTickTimers();
     void sCollision();
@@ -24,7 +37,6 @@ public:
     void ResolveAttackCollision(EntityPointer pAttack, EntityPointer pTarget);
     void ResolveEnemyPlayerCollision(EntityPointer pEnemy, EntityPointer pPlayer);
     void RenderBackground();
-    void DoAction(Action action);
 
     void DoSpecial();
 
@@ -62,7 +74,7 @@ public:
 
     sf::Text CreateMenuItem(const sf::Font& font, const std::string& text, float x, float y);
 
-    void Initialize(const std::string& levelPath);
+    void Initialize();
 
     void CreateBackground();
 
@@ -70,7 +82,7 @@ public:
 
     void SpawnPlayer();
 
-    void SpawnEnemy();
+    void SpawnEnemy(eAsset asset, eBehavior behave, Vec2 pos);
 
 private:
     std::string m_levelPath;
@@ -83,11 +95,21 @@ private:
         {eSpecial::Forcefield, "Force Field"},
         {eSpecial::Disabled, "Disabled"},
     };
+
+    std::vector<eAsset> m_editorAssets =
+    {
+        eAsset::Asteroid,
+        eAsset::Ufo,
+    };
+    int m_editorAssetsIdx = 0;
+
+    eEditorView m_currentView;
     std::vector<sf::Text> m_hotMenuItems;
     std::vector<sf::Text> m_pauseMenuItems;
     bool m_isPauseMenuActive = false;
     bool m_isHotMenuActive = false;
     int m_selectedPauseIndex = 0;
     int m_selectedHotMenuIndex = 0;
+    int m_screenScrollSpeed = 0;
 };
 
