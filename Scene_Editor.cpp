@@ -1,4 +1,9 @@
 #include "Scene_Editor.h"
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include <string>
+#include <filesystem>
 
 Scene_Editor::Scene_Editor(sf::RenderWindow* pWindow, GameEngine* pGame)
 	: Scene(pWindow, pGame)
@@ -38,11 +43,14 @@ void Scene_Editor::RegisterSceneActions()
 	RegisterAction(sf::Keyboard::C, eAction::ToggleCollision);
 	RegisterAction(sf::Keyboard::Tab, eAction::ToggleHotMenu);
 	RegisterAction(sf::Keyboard::Enter, eAction::TogglePauseMenu);
+	RegisterAction(sf::Keyboard::Enter, eAction::SelectOption);
 	RegisterAction(sf::Keyboard::G, eAction::ToggleGrid);
 	RegisterAction(sf::Keyboard::W, eAction::MoveUp);
 	RegisterAction(sf::Keyboard::S, eAction::MoveDown);
 	RegisterAction(sf::Keyboard::A, eAction::CycleLeft);
 	RegisterAction(sf::Keyboard::D, eAction::CycleRight);
+	RegisterAction(sf::Keyboard::P, eAction::Save);
+	RegisterAction(sf::Keyboard::L, eAction::Load);
 	RegisterAction(sf::Keyboard::N, eAction::New);
 }
 
@@ -148,7 +156,7 @@ void Scene_Editor::sRender()
 	}
 
 	DrawHud();
-	RenderItemMenu();
+	RenderLoadMenu();
 	m_pWindow->display();
 }
 
@@ -160,20 +168,20 @@ void Scene_Editor::DrawHud()
 	{
 	case eEditorView::Main:
 		controls =
-"N: new enemy \n \
-B: cycle background \n \
-S: save current to file \n \
-L: load level file \n \
-P: play current level \n \
+"N: new enemy \n\
+B: cycle background \n\
+P: save current to file \n\
+L: load level file \n\
+G: play current level \n\
 W/S: move camera \n";
-		info = "Main View";
+		info = "Main View\n" + m_currentFile;
 		break;
 	case eEditorView::New:
 		RenderAssetPreview();
 		controls =
-"N: exit view \n \
-L-Click: Spawn enemy \n \
-Scroll: Cycle enemies \n \
+"N: exit view \n\
+L-Click: Spawn enemy \n\
+Scroll or A/D: Cycle enemies \n\
 W/S: move camera \n";
 		info = "New View";
 		break;
@@ -182,20 +190,32 @@ W/S: move camera \n";
 	}
 
 	// Create a text object
-	sf::Text text;
-	text.setFont(m_pGame->GetAssets().GetFont(eAsset::SerifFont)); // Set the font
-	text.setString(controls); // Set the string to display
-	text.setCharacterSize(24); // Set the character size in pixels
-	text.setFillColor(sf::Color::Red); // Set the fill color
-	text.setPosition(50, 50); // Set the position of the text
-	text.setOutlineColor(sf::Color::Black);
-	text.setOutlineThickness(2);
+	sf::Text textControls;
+	textControls.setFont(m_pGame->GetAssets().GetFont(eAsset::SerifFont)); // Set the font
+	textControls.setString(controls); // Set the string to display
+	textControls.setCharacterSize(20); // Set the character size in pixels
+	textControls.setFillColor(sf::Color::Red); // Set the fill color
+	textControls.setPosition(20, 50); // Set the position of the text
+	textControls.setOutlineColor(sf::Color::Black);
+	textControls.setOutlineThickness(2);
 
+	sf::Text textInfo;
+	textInfo.setFont(m_pGame->GetAssets().GetFont(eAsset::SerifFont)); // Set the font
+	textInfo.setString(info); // Set the string to display
+	textInfo.setCharacterSize(20); // Set the character size in pixels
+	textInfo.setFillColor(sf::Color::Red); // Set the fill color
+	textInfo.setPosition(WINDOW_WIDTH/2, 25); // Set the position of the text
+	textInfo.setOutlineColor(sf::Color::Black);
+	textInfo.setOutlineThickness(2);
+
+	sf::FloatRect textRect = textInfo.getLocalBounds();
+	textInfo.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
 
 	sf::View worldView = m_pWindow->getView();
 	sf::View hudView(sf::FloatRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
 	m_pWindow->setView(hudView);
-	m_pWindow->draw(text);
+	m_pWindow->draw(textControls);
+	m_pWindow->draw(textInfo);
 	m_pWindow->setView(worldView);
 }
 
@@ -239,6 +259,9 @@ void Scene_Editor::sDoAction(Action action)
 		break;
 	case eEditorView::New:
 		NewDoAction(action);
+		break;
+	case eEditorView::Load:
+		LoadDoAction(action);
 		break;
 	}
 }
@@ -289,6 +312,34 @@ void Scene_Editor::NewDoAction(Action action)
 		case eAction::MoveUp:
 		case eAction::MoveDown:
 			m_screenScrollSpeed = 0;
+			break;
+		}
+	}
+}
+
+void Scene_Editor::LoadDoAction(Action action)
+{
+	if (action.GetType() == eActionType::Start)
+	{
+		switch (action.GetName())
+		{
+		case eAction::Pause:
+			m_isPaused = !m_isPaused;
+			break;
+		case eAction::Quit:
+			m_currentView = eEditorView::Main;
+			m_isLoadMenuActive = false;
+			break;
+		case eAction::SelectOption:
+			LoadLevelFromFile("levels/"+m_loadMenuItems[m_selectedLoadMenuIndex].getString());
+			break;
+		case eAction::MoveUp:
+			m_selectedLoadMenuIndex = (m_selectedLoadMenuIndex - 1 + m_loadMenuItems.size()) % m_loadMenuItems.size();
+			break;
+		case eAction::MoveDown:
+			m_selectedLoadMenuIndex = (m_selectedLoadMenuIndex + 1) % m_loadMenuItems.size();
+			break;
+		case eAction::ActionCount:
 			break;
 		}
 	}
@@ -355,6 +406,13 @@ void Scene_Editor::MainDoAction(Action action)
 		case eAction::LClick:
 			GrabEntity();
 			break;
+		case eAction::Save:
+			SaveLevelToFile();
+			break;
+		case eAction::Load:
+			m_currentView = eEditorView::Load;
+			m_isLoadMenuActive = true;
+			PopulateLoadMenu();
 		case eAction::ActionCount:
 			break;
 		}
@@ -522,5 +580,166 @@ void Scene_Editor::CreateMenus()
 		optionText.setFillColor(sf::Color::White);
 		optionText.setPosition(300.f, 200.f + i * 50.f);
 		m_hotMenuItems.push_back(optionText);
+	}
+}
+
+void Scene_Editor::SaveLevelToFile()
+{
+	// File path and name
+	std::string filename = m_currentFile;
+	if (filename == "new")
+	{
+		filename = "levels/custom-level-" + std::to_string(std::time(nullptr)) + ".txt";
+		m_currentFile = filename;
+	}
+
+	// Create an ofstream object called 'file'
+	std::ofstream file(filename);
+
+	// Check if the file was opened successfully
+	if (!file.is_open())
+	{
+		std::cout << "Error: Could not open the file '" << filename << "' for writing." << std::endl;
+		exit(1); // Return with error code 1
+	}
+
+	EntityList eList = *(m_entityMgr.getEntities(eEntityTag::Enemy));
+	for (EntityPointer e : eList)
+	{
+		file << (int)(e->GetComponent<CAnimation>().animation.GetName()) << " "
+			<< (int)(e->GetComponent<CTransform>().pos.x) << " "
+			<< (int)(e->GetComponent<CTransform>().pos.y) << " "
+			<<  std::endl;
+	}
+
+	// Close the file
+	file.close();
+
+	std::cout << "File '" << filename << "' written successfully." << std::endl;
+}
+
+void Scene_Editor::LoadLevelFromFile(std::string filename)
+{
+	DestroyAllEntities(); //first clean up current level
+
+	// Open the file
+	std::ifstream file(filename);
+
+	// Check if file opened successfully
+	if (!file)
+	{
+		std::cerr << "Unable to open file: " << filename << std::endl;
+		return;
+	}
+
+	std::string line;
+
+	// Read file line by line
+	while (getline(file, line))
+	{
+		eAsset asset = eAsset(stoi(GetAndDeleteNextStringToken(line)));
+		int xPos = stoi(GetAndDeleteNextStringToken(line));
+		int yPos = stoi(GetAndDeleteNextStringToken(line));
+
+		SpawnEnemy(asset, eBehavior::Idle, Vec2(xPos, yPos));
+	}
+
+	m_currentFile = filename;
+}
+
+std::string Scene_Editor::GetAndDeleteNextStringToken(std::string& str)
+{
+	size_t whitespaceStartPos;
+	std::string token;
+	if (str.length() == 0) { return str; }
+	if ((whitespaceStartPos = str.find(' ')) != std::string::npos)
+	{
+		size_t whitespaceEndPos = whitespaceStartPos;
+		while (str[whitespaceEndPos + 1] == ' ')
+		{
+			whitespaceEndPos++;
+		}
+		token = str.substr(0, whitespaceStartPos);
+		str.erase(0, whitespaceEndPos + 1);
+	}
+	else
+	{
+		token = str;
+		str.erase(0, str.length());
+	}
+	return token;
+}
+
+void Scene_Editor::RenderLoadMenu()
+{
+	sf::View worldView = m_pWindow->getView();
+	sf::View menuView(sf::FloatRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
+	m_pWindow->setView(menuView);
+	sf::Sprite bg;
+
+	if (m_isLoadMenuActive)
+	{
+		bg = m_pGame->GetAssets().GetAnimation(eAsset::MenuBack).GetSprite();
+		bg.setPosition(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+		//m_pWindow->draw(bg);
+
+		for (size_t i = 0; i < m_loadMenuItems.size(); i++)
+		{
+			if (i == m_selectedLoadMenuIndex)
+			{
+				m_loadMenuItems[i].setFillColor(sf::Color::Red); // Highlight selected item
+			}
+			else
+			{
+				m_loadMenuItems[i].setFillColor(sf::Color::White);
+			}
+			m_pWindow->draw(m_loadMenuItems[i]);
+		}
+	}
+}
+
+void Scene_Editor::PopulateLoadMenu()
+{
+	std::vector<std::string> files = getFilenamesInDirectory("levels");
+
+	for (size_t i = 0; i < files.size(); ++i)
+	{
+		sf::Text optionText(files[i], m_pGame->GetAssets().GetFont(eAsset::SerifFont), 24);
+		optionText.setFillColor(sf::Color::White);
+		optionText.setPosition(300.f, 200.f + i * 50.f);
+		m_loadMenuItems.push_back(optionText);
+	}
+}
+
+std::vector<std::string> Scene_Editor::getFilenamesInDirectory(const std::string& directoryPath)
+{
+	std::vector<std::string> filenames;
+
+	// Check if the directory exists
+	if (!std::filesystem::exists(directoryPath))
+	{
+		std::cerr << "Directory does not exist: " << directoryPath << std::endl;
+		return filenames;
+	}
+
+	// Iterate over each entry in the directory
+	for (const auto& entry : std::filesystem::directory_iterator(directoryPath))
+	{
+		if (std::filesystem::is_regular_file(entry))
+		{
+			filenames.push_back(entry.path().filename().string());
+		}
+	}
+
+	return filenames;
+}
+
+void Scene_Editor::DestroyAllEntities()
+{
+	EntityList eList = *(m_entityMgr.getEntities(eEntityTag::Enemy));
+
+	for(EntityPointer e : eList)
+	{
+		e->markInactive();
 	}
 }

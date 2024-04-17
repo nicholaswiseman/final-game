@@ -26,6 +26,8 @@ enum class eAction
 	CycleRight,
 	WheelUp,
 	WheelDown,
+	Save,
+	Load,
 	ActionCount
 };
 
